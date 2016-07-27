@@ -1,8 +1,33 @@
 {
-    "name": "War_Of_Lords",
-    "version": "1.0.0",
-    "keywords": ["util", "functional", "server", "client", "browser"],
-    "author": "Peter",
-    "contributors": [],
-    "dependencies": {}
+  "name": "waroflords",
+  "version": "1.0.0",
+  "keywords": [
+    "util",
+    "functional",
+    "server",
+    "client",
+    "browser"
+  ],
+  "author": "Peter",
+  "contributors": [],
+  "dependencies": {
+    "express": "^4.14.0",
+    "http": "0.0.0",
+    "socket.io": "^1.4.8"
+  },
+  "description": "War of Lords is a 2D multiplayer, turn-based, hexagonal tile, strategy game",
+  "main": "app.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PeterWhiteJavascript/waroflords.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PeterWhiteJavascript/waroflords/issues"
+  },
+  "homepage": "https://github.com/PeterWhiteJavascript/waroflords#readme"
 }
