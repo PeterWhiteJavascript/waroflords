@@ -148,10 +148,10 @@ Quintus["2D"] = function(Q) {
         blockTileW: 10,
         blockTileH: 10,
         type: 1,
-        renderAlways: true,
-        z:0
+        renderAlways: true
       });
-      this.p.z=Q("TileLayer",1).items.length;
+      this.p.blockTileW = this.p.tiles.length;
+      this.p.blockTileH = this.p.tiles[0].length;
       if(this.p.dataAsset) {
         this.load(this.p.dataAsset);
       }
@@ -179,11 +179,6 @@ Quintus["2D"] = function(Q) {
       this.collisionNormal = { separate: []};
 
       this._generateCollisionObjects();
-      
-      //Custom code to get the collision layer to move the player to the target location
-      this.on("touch",function(touch){
-          Q.state.get("playerObj").processTouch(touch);
-      });
     },
 
     // Generate the tileCollisionObject overrides where needed
@@ -292,7 +287,7 @@ Quintus["2D"] = function(Q) {
     // Overload this method to draw tiles at frame 0 or not draw
     // tiles at higher number frames
     drawableTile: function(tileNum) {
-      return tileNum > 0;
+      return tileNum >= 0;
     },
 
     // Overload this method to control which tiles trigger a collision
@@ -326,6 +321,7 @@ Quintus["2D"] = function(Q) {
           col, colObj;
 
       normal.collided = false;
+
       for(var tileY = tileStartY; tileY<=tileEndY; tileY++) {
         for(var tileX = tileStartX; tileX<=tileEndX; tileX++) {
           if(this.tilePresent(tileX,tileY)) {
@@ -373,21 +369,23 @@ Quintus["2D"] = function(Q) {
          blockOffsetY < 0 || blockOffsetY >= this.p.rows) {
            return;
       }
-      
       var canvas = document.createElement('canvas'),
           ctx = canvas.getContext('2d');
 
-      canvas.width = p.blockW;
-      canvas.height= p.blockH;
+      canvas.width = p.blockW+p.tileW/2;
+      canvas.height= p.blockH+p.tileH/2;
       this.blocks[blockY] = this.blocks[blockY] || {};
       this.blocks[blockY][blockX] = canvas;
-
+      
+      var staggerBy = p.tileH/2;
+      var staggerY = staggerBy;
       for(var y=0;y<p.blockTileH;y++) {
+        staggerY=(y+1)%2*staggerBy;
         if(tiles[y+blockOffsetY]) {
           for(var x=0;x<p.blockTileW;x++) {
             if(this.drawableTile(tiles[y+blockOffsetY][x+blockOffsetX])) {
               sheet.draw(ctx,
-                         x*p.tileW,
+                         x*p.tileW+staggerY,
                          y*p.tileH,
                          tiles[y+blockOffsetY][x+blockOffsetX]);
             }

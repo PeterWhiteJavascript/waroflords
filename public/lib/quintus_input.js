@@ -62,12 +62,13 @@ Quintus.Input = function(Q) {
   var DEFAULT_KEYS = {
     LEFT: 'left', RIGHT: 'right',
     UP: 'up',     DOWN: 'down',
+    SPACE: 'fire',
+    Z: 'fire',
+    X: 'action',
+    ENTER: 'confirm',
     ESC: 'esc',
-    S: 'interact',
-    Q: 'diagMove',
-    W: 'menu',
-    A: 'back',
-    E: 'DOAI'
+    P: 'P',
+    S: 'S'
   };
 
   var DEFAULT_TOUCH_CONTROLS  = [ ['left','<' ],
@@ -764,7 +765,7 @@ Quintus.Input = function(Q) {
 
     if(joypad) {
       Q.input.touchControls({
-        controls: [ [],[],[],[],[]]
+        controls: [ [],[],[],['action','b'],['fire','a']]
       });
       Q.input.joypadControls();
     } else {
@@ -905,7 +906,74 @@ Quintus.Input = function(Q) {
    * @class stepControls
    * @for Quintus.Input
    */
-  
+  Q.component("stepControls", {
+
+    added: function() {
+      var p = this.entity.p;
+
+      if(!p.stepDistance) { p.stepDistance = 32; }
+      if(!p.stepDelay) { p.stepDelay = 0.2; }
+
+      p.stepWait = 0;
+      this.entity.on("step",this,"step");
+      this.entity.on("hit", this,"collision");
+    },
+
+    collision: function(col) {
+      var p = this.entity.p;
+
+      if(p.stepping) {
+        p.stepping = false;
+        p.x = p.origX;
+        p.y = p.origY;
+      }
+
+    },
+
+    step: function(dt) {
+      var p = this.entity.p,
+          moved = false;
+      p.stepWait -= dt;
+
+      if(p.stepping) {
+        p.x += p.diffX * dt / p.stepDelay;
+        p.y += p.diffY * dt / p.stepDelay;
+      }
+
+      if(p.stepWait > 0) { return; }
+      if(p.stepping) {
+        p.x = p.destX;
+        p.y = p.destY;
+      }
+      p.stepping = false;
+
+      p.diffX = 0;
+      p.diffY = 0;
+
+      if(Q.inputs['left']) {
+        p.diffX = -p.stepDistance;
+      } else if(Q.inputs['right']) {
+        p.diffX = p.stepDistance;
+      }
+
+      if(Q.inputs['up']) {
+        p.diffY = -p.stepDistance;
+      } else if(Q.inputs['down']) {
+        p.diffY = p.stepDistance;
+      }
+
+      if(p.diffY || p.diffX ) {
+        p.stepping = true;
+        p.origX = p.x;
+        p.origY = p.y;
+        p.destX = p.x + p.diffX;
+        p.destY = p.y + p.diffY;
+        p.stepWait = p.stepDelay;
+      }
+
+    }
+
+  });
 };
 
 

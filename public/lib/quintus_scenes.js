@@ -444,13 +444,8 @@ Quintus.Scenes = function(Q) {
      @param [container] - `container` to add the item to
      @return the inserted object for chaining
     */
-    insert: function(itm,container,under) {
-      if(!under){
-        this.items.push(itm);
-      } else {
-        //Insert the item directly onto the tile layer (under already inserted items
-        this.items.splice(this.lists.TileLayer.length,0,itm);
-      }
+    insert: function(itm,container) {
+      this.items.push(itm);
       itm.stage = this;
       itm.container = container;
       if(container) {
@@ -1096,8 +1091,6 @@ Quintus.Scenes = function(Q) {
     // Finally return the stage to the user for use if needed
     return stage;
   };
-  
-  
 
   Q.stageStepLoop = function(dt) {
     var i,len,stage;
@@ -1105,6 +1098,7 @@ Quintus.Scenes = function(Q) {
 
     if(dt < 0) { dt = 1.0/60; }
     if(dt > 1/15) { dt  = 1.0/15; }
+
     for(i =0,len=Q.stages.length;i<len;i++) {
       Q.activeStage = i;
       stage = Q.stage();

@@ -509,6 +509,7 @@ Quintus.Sprites = function(Q) {
     */
     hide: function() {
       this.p.hidden = true;
+      this.trigger("changeVisibility",true);
     },
 
     /**
@@ -519,6 +520,7 @@ Quintus.Sprites = function(Q) {
     */
     show: function() {
       this.p.hidden = false;
+      this.trigger("changeVisibility",false);
     },
 
     /**

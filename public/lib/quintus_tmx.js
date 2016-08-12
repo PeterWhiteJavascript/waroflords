@@ -70,7 +70,7 @@ Quintus.TMX = function(Q) {
        var sources = Q._tmxExtractSources(Q.asset(tmxFile));
        additionalAssets = additionalAssets.concat(sources);
      });
-     
+
      if(additionalAssets.length > 0) {
        Q.load(additionalAssets,callback,options);
      } else {
@@ -117,17 +117,19 @@ Quintus.TMX = function(Q) {
                           spacingX: attr(tileset,"spacing"),
                           spacingY: attr(tileset,"spacing")
                         };
+
      var tiles = tileset.querySelectorAll("tile");
      for(var i = 0;i < tiles.length;i++) {
        var tile = tiles[i];
        var tileId = attr(tile,"id");
        var tileGid = gid + tileId;
-       
+
        var properties = parseProperties(tile);
 
        if(properties.points) {
          properties.points = Q._map(properties.points.split(" "),parsePoint);
        }
+
        // save the properties indexed by GID for creating objects
        tileProperties[tileGid] = properties;
 
@@ -199,6 +201,7 @@ Quintus.TMX = function(Q) {
      },parseProperties(layer));
 
    var TileLayerClass = tileLayerProperties.Class || 'TileLayer';
+
    if(tileLayerProperties['collision']) {
      stage.collisionLayer(new Q[TileLayerClass](tileLayerProperties));
    } else {

@@ -100,7 +100,7 @@ Quintus.Touch = function(Q) {
 
     touch: function(e) {
       var touches = e.changedTouches || [ e ];
-      var touchedObj = false;
+
       for(var i=0;i<touches.length;i++) {
 
         for(var stageIdx=0;stageIdx < touchStage.length;stageIdx++) {
@@ -118,9 +118,9 @@ Quintus.Touch = function(Q) {
           if(col || stageIdx === touchStage.length - 1) {
             obj = col && col.obj;
             pos.obj = obj;
-            touchedObj = true;
             this.trigger("touch",pos);
           }
+
           if(obj && !this.touchedObjects[obj]) {
             this.activeTouches[touchIdentifier] = {
               x: pos.p.px,
@@ -134,30 +134,12 @@ Quintus.Touch = function(Q) {
               stage: stage
             };
             this.touchedObjects[obj.p.id] = true;
-            if(obj.p.type===Q.SPRITE_UI){
-                obj.trigger("touch");
-            } else {
-                var objClasses = ["Building","Pickup","SolidInteractable","Crop","Actor"];
-                var objClass;
-                objClasses.forEach(function(cl){
-                    if(obj.isA(cl)){
-                        objClass = cl;
-                    };
-                });
-                //On the server we are dealing with players
-                if(objClass==="Actor"){objClass="Player";};
-                //Send the touch data to the server
-                Q.sendData("touch",{x:pos.p.px,y:pos.p.py,loc:[Math.floor(pos.p.px/Q.tileH),Math.floor(pos.p.py/Q.tileH)],class:objClass});
-            }
+            obj.trigger('touch', this.activeTouches[touchIdentifier]);
             break;
           }
 
         }
 
-      }
-      //If there was no object touched
-      if(!touchedObj&&pos){
-          Q.sendData("touch",{x:pos.p.px,y:pos.p.py});
       }
       //e.preventDefault();
     },
@@ -193,8 +175,9 @@ Quintus.Touch = function(Q) {
             touchIdentifier = touch.identifier || 0;
 
         var active = this.activeTouches[touchIdentifier];
-
+        
         if(active) {
+          this.trigger("touchEnd",active);
           active.obj.trigger('touchEnd', active);
           delete this.touchedObjects[active.obj.p.id];
           this.activeTouches[touchIdentifier] = null;
@@ -208,7 +191,7 @@ Quintus.Touch = function(Q) {
   Q.touch = function(type,stage) {
     Q.untouch();
     touchType = type || Q.SPRITE_UI;
-    touchStage = stage || [2,1,0];
+    touchStage = stage || [3,2,1,0];
     if(!Q._isArray(touchStage)) {
       touchStage = [touchStage];
     }
