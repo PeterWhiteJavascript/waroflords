@@ -47,6 +47,64 @@
         "w":32,
         "h":32
     },
+    "ui_gear":{
+        "tilew":32,
+        "tileh":32,
+        "sx":544,
+        "sy":0,
+        "w":32,
+        "h":32
+    },
+    
+    "ui_max":{
+        "tilew":32,
+        "tileh":32,
+        "sx":384,
+        "sy":32,
+        "w":32,
+        "h":32
+    },
+    "ui_more":{
+        "tilew":32,
+        "tileh":32,
+        "sx":416,
+        "sy":32,
+        "w":32,
+        "h":32
+    },
+    "ui_plus":{
+        "tilew":32,
+        "tileh":32,
+        "sx":448,
+        "sy":32,
+        "w":32,
+        "h":32
+    },
+    "ui_minus":{
+        "tilew":32,
+        "tileh":32,
+        "sx":480,
+        "sy":32,
+        "w":32,
+        "h":32
+    },
+    "ui_fewer":{
+        "tilew":32,
+        "tileh":32,
+        "sx":512,
+        "sy":32,
+        "w":32,
+        "h":32
+    },
+    "ui_min":{
+        "tilew":32,
+        "tileh":32,
+        "sx":544,
+        "sy":32,
+        "w":32,
+        "h":32
+    },
+    
     "turn_start":{
         "tilew":64,
         "tileh":64,
@@ -59,6 +117,38 @@
         "tilew":64,
         "tileh":64,
         "sx":64,
+        "sy":64,
+        "w":64,
+        "h":64
+    },
+    "ui_officers":{
+        "tilew":64,
+        "tileh":64,
+        "sx":128,
+        "sy":64,
+        "w":64,
+        "h":64
+    },
+    "ui_troops":{
+        "tilew":64,
+        "tileh":64,
+        "sx":192,
+        "sy":64,
+        "w":64,
+        "h":64
+    },
+    "ui_food":{
+        "tilew":64,
+        "tileh":64,
+        "sx":256,
+        "sy":64,
+        "w":64,
+        "h":64
+    },
+    "ui_gold":{
+        "tilew":64,
+        "tileh":64,
+        "sx":320,
         "sy":64,
         "w":64,
         "h":64

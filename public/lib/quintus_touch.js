@@ -191,7 +191,7 @@ Quintus.Touch = function(Q) {
   Q.touch = function(type,stage) {
     Q.untouch();
     touchType = type || Q.SPRITE_UI;
-    touchStage = stage || [3,2,1,0];
+    touchStage = stage || [5,4,3,2,1,0];
     if(!Q._isArray(touchStage)) {
       touchStage = [touchStage];
     }

@@ -8,16 +8,29 @@ Quintus.Game = function(Q){
         Q.viewport.on("step");
         
     };
+    var playTurnStart=function(){
+        var obj;
+        var stage = Q.stage(4);
+        if(Q.state.get("self").turn){
+            obj = stage.insert(new Q.Sprite({cx:0,cy:0,x:3,y:3,sheet:"turn_start",scale:2}));
+        } else {
+            obj = stage.insert(new Q.Sprite({cx:0,cy:0,x:3,y:3,sheet:"opponents_turn",scale:2}));
+        }
+        obj.add("tween");
+        setTimeout(function(){
+            obj.animate({scale:1},1,Q.Easing.Quadratic.InOut);
+        },1000);
+    };
     Q.startTurn = function(){
         var self = Q.state.get("self");
         self.turn = true;
-        Q.stageScene("turnStart",5);
+        playTurnStart();
     };
     
     Q.standByTurn = function(){
         var self = Q.state.get("self");
         self.turn = false;
-        Q.stageScene("turnStart",5);
+        playTurnStart();
     };
     Q.hideAll=function(){
         Q.state.get("self").buildings.forEach(function(bld){
@@ -53,7 +66,6 @@ Quintus.Game = function(Q){
     };
     //Client side only
     Q.calculateLOS = function(){
-        var fog = Q.fog;
         var self = Q.state.get("self");
         var bld = self.buildings;
         var unt = self.units;
@@ -64,14 +76,21 @@ Quintus.Game = function(Q){
         unt.forEach(function(u){
             unfog = unfog.concat(Q.getLOS(u.p.loc,u.p.los));
         });
-        unfog.forEach(function(f){
-            fog.setTile(f[0],f[1],11);
-            var objOn = Q.occupied[f[1]][f[0]].object;
-            if(objOn){
-                objOn.show();
+        Q.unFog(unfog);
+    };
+    Q.unFog=function(tiles){
+        var fog = Q.fog;
+        tiles.forEach(function(f){
+            if(f[0]>=0&&f[0]<Q.state.get("mapWidth")&&f[1]>=0&&f[1]<Q.state.get("mapHeight")){
+                fog.setTile(f[0],f[1],11);
+                if(Q.occupied[f[1]]){
+                    var objOn = Q.occupied[f[1]][f[0]].object;
+                    if(objOn){
+                        objOn.show();
+                    }
+                }
             }
         });
-        
     };
     Q.checkOwned = function(owner){
         if(owner===Q.state.get("self").player){return true;}
@@ -83,8 +102,9 @@ Quintus.Game = function(Q){
     };
     //Server side: Checks if both players are ready and the game has initialized
     Q.checkInitializedAndReady=function(){
-        console.log(Q.initialized,Q.p1.ready,Q.p2.ready);
         if(Q.initialized&&Q.p1.ready&&Q.p2.ready){
+            Q.p1.buildings[0].addOfficer(Q.p1.lord);
+            Q.p2.buildings[0].addOfficer(Q.p2.lord);
             //Send the first turn event
             io.sockets.in("Game"+Q.gameID).emit("firstTurn",{player:1,lords:[Q.p1.lord.id,Q.p2.lord.id]});
         }
@@ -195,7 +215,7 @@ Quintus.Game = function(Q){
         }));
         //When the user clicks, this function handles it
         Q.touchInput.on("touch",white,function(touch){
-            if(!Q.inMenu){
+            if(!Q.state.get("inMenu")){
                 var loc = Q.convertXY(touch.p.x,touch.p.y);
                 if(!Q.occupied[loc[1]]){console.log("You have clicked off of the map!");return;};
                 var tileData = Q.occupied[loc[1]][loc[0]];
@@ -214,7 +234,7 @@ Quintus.Game = function(Q){
         });
         //On touch end, check if the same object that was touched is still touched
         Q.touchInput.on("touchEnd",white,function(touch){
-            if(!Q.inMenu){
+            if(!Q.state.get("inMenu")){
                 var loc = Q.convertXY(touch.x,touch.y);
                 if(!Q.occupied[loc[1]]){return;};
                 var tileData = Q.occupied[loc[1]][loc[0]];

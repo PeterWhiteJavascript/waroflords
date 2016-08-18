@@ -1,6 +1,7 @@
 {
     "donkey_kong":{
         "id":"donkey_kong",
+        "image":"donkey_kong.png",
         "name":"Donkey Kong",
         "stats":{
             "atk":15,
@@ -26,6 +27,7 @@
     },
     "ma_teng":{
         "id":"ma_teng",
+        "image":"ma_teng.png",
         "name":"Ma Teng",
         "stats":{
             "atk":5,
@@ -51,6 +53,7 @@
     },
     "xu_sheng":{
         "id":"xu_sheng",
+        "image":"xu_sheng.png",
         "name":"Xu Sheng",
         "stats":{
             "atk":10,

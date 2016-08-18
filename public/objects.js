@@ -59,6 +59,28 @@ Quintus.Objects = function(Q){
         }
         return troops;
     };
+    //Adds up all troops stats and returns the sum
+    Q.addStats=function(troops){
+        var sum = {atk:0,def:0,spd:0,bld:0,eff:0,prd:0};
+        //Loop through each troop
+        var keys = Object.keys(troops[0]);
+        keys.shift();
+        troops.forEach(function(troop){
+            keys.forEach(function(key){
+                sum[key]+=troop[key];
+            });
+        });
+        return sum;
+    };
+    //Gets a certain number of troops that is sorted by a stat (id or atk,def,spd,bld,eff,prd)
+    Q.getTroops=function(troops,stat,to,from){
+        if(!from){from=0;};
+        //If we're getting by order of array (id)
+        if(!stat) {return troops.slice(from,to);};
+        return troops.sort(function(a,b){
+            return b[stat]-a[stat];
+        }).slice(from,to);
+    };
     
     //Allows for setting the xy coordinates from a tile location
     Q.component('location',{
@@ -116,6 +138,7 @@ Quintus.Objects = function(Q){
             var text = cont.insert(new Q.HpText({obj:cont}));
             entity.on("changeHp",text,"displayHp");
             entity.trigger("changeHp");
+            cont.p.hidden = this.entity.p.hidden;
         }
     });
     
@@ -129,33 +152,53 @@ Quintus.Objects = function(Q){
                 maxHp:1000,
                 startingTroops:100,
                 maxTroops:2000,
+                food:1000,
+                gold:1000,
                 troops:[],
                 officers:[],
-                los:3
+                usedTroops:[],
+                usedOfficers:[],
+                los:3,
+                isA:"Town",
+                hidden:true
             });
-            this.getLord();
             this.add("location");
             this.on("selected");
             this.addTroops(Q.generateTroops(this.p.startingTroops,this.p.troops.length));
             //var troops = this.removeTroops([4,5,6,7,3]); //Remove troops sample
         },
-        loseHp:function(loss){
-            this.p.hp-=loss;
-            if(this.p.hp<=0){alert("You lost");};
-            this.trigger("changeHp");
+        changeFood:function(amount){
+            this.p.food+=amount;
+            this.trigger("changeFood");
+        },
+        changeGold:function(amount){
+            this.p.gold+=amount;
+            this.trigger("changeGold");
         },
         gainHp:function(gain){
             this.p.hp+=gain;
             if(this.p.hp>this.p.maxHp){this.p.hp=this.p.maxHp;};
             this.trigger("changeHp");
         },
-        //Adds the lord to officers at the start of the game
-        getLord:function(){
+        loseHp:function(loss){
+            this.p.hp-=loss;
+            if(this.p.hp<=0){alert("You lost");};
+            this.trigger("changeHp");
+        },
+        addOfficer:function(officer){
+            //Add to town
+            this.p.officers.push(officer);
+            //Add to player
+            this.p.owner.officers.push(officer);
+            this.trigger("changeOfficers");
+        },
+        removeOfficer:function(officer){
             
         },
         //Increase the number of troops here (by recruit or moving from field)
         addTroops:function(troops){
             this.p.troops = this.p.troops.concat(troops);
+            this.p.owner.troops = this.p.owner.troops.concat(troops);
             this.trigger("changeTroops");
         },
         //Accepts an array of troop id numbers
@@ -204,7 +247,10 @@ Quintus.Objects = function(Q){
                 type:Q.SPRITE_NONE,
                 size:1,
                 hp:300,
-                los:2
+                maxHp:300,
+                los:2,
+                isA:"Market",
+                hidden:true
             });
             this.add("location");
             this.on("selected");
@@ -227,7 +273,10 @@ Quintus.Objects = function(Q){
                 type:Q.SPRITE_NONE,
                 size:1,
                 hp:300,
-                los:2
+                maxHp:300,
+                los:2,
+                isA:"Farm",
+                hidden:true
             });
             this.add("location");
             this.on("selected");
@@ -235,6 +284,32 @@ Quintus.Objects = function(Q){
         selected:function(){
             if(!this.p.selected){
                 this.p.selected = true;
+                Q.stageScene("objectStats",2,{obj:this});
+            } else {
+                this.p.selected=false;
+                Q.clearStage(1);
+                Q.clearStage(2);
+            }
+        }
+    });
+    
+    Q.Sprite.extend('Unit',{
+        init:function(p){
+            this._super(p,{
+                asset:"",
+                type:Q.SPRITE_NONE,
+                size:1,
+                los:2,
+                isA:"Unit",
+                hidden:true
+            });
+            this.add("location");
+            this.on("selected");
+        },
+        selected:function(){
+            if(!this.p.selected){
+                this.p.selected = true;
+                Q.stageScene("unitMenu",1,{obj:this});
                 Q.stageScene("objectStats",2,{obj:this});
             } else {
                 this.p.selected=false;

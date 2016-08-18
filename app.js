@@ -27,6 +27,19 @@ function confirmId(){
         }
     }
 }
+function player(socket,id,elo,range,name){
+    this.socket = socket;
+    this.id = id;
+    this.elo = elo;
+    this.range = range;
+    this.name = name;
+    
+    this.officers = [];
+    this.troops = [];
+    this.buildings = [];
+    this.units = [];
+    this.arms = {spears:0,pikes:0,swords:0,clubs:0,bows:0,rams:0,catapults:0,horses:0};
+};
 //Holds all information about every game
 var games = [];
 //Stores all clients searching for a match
@@ -77,7 +90,7 @@ io.on('connection', function (socket) {
     });
     //This function matches player's with similar skill levels
     socket.on("findQuickMatch",function(data){
-        var self = socket.self = {id:id,socket:socket,elo:data.elo,range:100,name:data.name};
+        var self = socket.self = new player(socket,id,data.elo,100,data.name);
         function findOpponent(){
             //Check to see if a good opponent exists in the searchingQuickMatch array (Close elo, etc...)
             for(var i=0;i<searchingQuickMatch.length;i++){
@@ -106,11 +119,7 @@ io.on('connection', function (socket) {
                     //Create the new game and initialize it while the clients are confirming that they are still ready to play
                     opponent.ready = false;
                     self.ready = false;
-                    opponent.buildings = [];
-                    opponent.units = [];
                     opponent.player = 1;
-                    self.buildings = [];
-                    self.units = [];
                     self.player = 2;
                     var Q = socket.Q = new Quintus({dataPath:"./public/data/"}).include("Sprites, Scenes, 2D, Game, Map, Objects");
                     opponent.socket.Q = Q;
@@ -151,7 +160,14 @@ io.on('connection', function (socket) {
         socket.self.ready = true;
         socket.Q.checkInitializedAndReady();
     });
-
+    
+    
+    
+    socket.on("placeBuilding",function(data){
+        var Q = socket.Q;
+        Q.placeBuilding(Q.stage(0).insert(new Q[data.class]({loc:data.loc,owner:Q["p"+socket.self.player]})));
+        socket.broadcast.to("Game"+Q.gameID).emit("placeBuilding",{loc:data.loc,class:data.class,owner:socket.self.player});
+    });
 });
 
 server.listen(process.env.PORT || 5000);

@@ -1,10 +1,7 @@
 var qMap = function(Quintus) {
 "use strict";
 Quintus.Map = function(Q){
-    //Place an object in the occupied array and insert it into the stage
-    //Also adds it to the player's objects
     Q.placeBuilding=function(obj){
-        var owner = obj.p.owner;
         if(obj.p.size===2){
             var tiles = Q.getSurroundingTiles(obj.p.loc,true);
             //Set each tile to be occupied by this object
@@ -14,8 +11,23 @@ Quintus.Map = function(Q){
         } else {
             Q.occupied[obj.p.loc[1]][obj.p.loc[0]].object = obj;
         }
+        var owner = obj.p.owner;
         owner.buildings.push(obj);
         return obj;
+    };
+    //Place an object in the occupied array and insert it into the stage
+    //Also adds it to the player's objects
+    Q.placeClientBuilding=function(obj){
+        var ob = Q.placeBuilding(obj);
+        ob.add("ownable, hpBar");
+        if(Q.checkOwned(obj.p.owner.player)){
+            ob.show();
+            Q.unFog(Q.getLOS(ob.p.loc,ob.p.los));
+        } else if(Q.fog.p.tiles[ob.p.loc[1]][ob.p.loc[0]]===11){
+            ob.show();
+        }
+        Q.connection.socket.emit("placeBuilding",{class:"Market",loc:[9,3]});
+        return ob;
     };
     Q.placeUnit=function(obj){
         var owner = obj.p.owner;

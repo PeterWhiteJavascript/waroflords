@@ -18,11 +18,26 @@ Q.touch(Q.SPRITE_ALL).controls(true)
         .enableSound();
 
 require(['socket.io/socket.io.js']);
-Q.inMenu=true;
+Q.state.set("inMenu",true);
+
 
 var socket = io.connect();
 //All information about this connection is here
 var connection = Q.connection = {};
+
+function player(id,elo,player,name){
+    this.id = id;
+    this.elo = elo;
+    this.player = player;
+    this.name = name;
+    
+    this.officers = [];
+    this.troops = [];
+    this.buildings = [];
+    this.units = [];
+    this.arms = {spears:0,pikes:0,swords:0,clubs:0,bows:0,rams:0,catapults:0,horses:0};
+};
+
 function setUp(){
     /**CONNECTION**/  
     //When the user connects to the game
@@ -33,7 +48,7 @@ function setUp(){
         socket.emit('confirmConnect',{uniqueId:connection.id});
         //TODO
         //Load the login screen
-        //Q.stageScene("mainMenu",0,{connection:connection});
+        Q.stageScene("mainMenu",0,{connection:connection});
         
         //TESTING: Find a quick match on load
         var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -49,31 +64,41 @@ function setUp(){
     
     //data contains information about the opponent
     socket.on("startQuickMatch",function(data){
-        Q.state.set("opponent",data.opponent);
-        var op = Q.state.get("opponent");
-        op.buildings = [];
-        op.units = [];
-        Q.state.set("self",data.self);
-        var se = Q.state.get("self");
-        se.buildings = [];
-        se.units = [];
+        var opponent = new player(data.opponent.id,data.opponent.elo,data.opponent.player,data.opponent.name);
+        Q.state.set("opponent",opponent);
+        var self = new player(data.self.id,data.self.elo,data.self.player,data.self.name);
+        Q.state.set("self",self);
+        Q.state.set("gameID",data.gameID);
+        Q.state.set("gameType",data.gameType);
         Q.stageScene("initializeGame",0,{map:data.map});
     });
     
     socket.on("firstTurn",function(data){
         Q.state.set("turn",data.player);
+        var p1 = Q.getOwner(1);
         Q.getOwner(1).lord = Q.assets["lords.json"][data.lords[0]];
+        p1.buildings[0].addOfficer(p1.lord);
+        var p2 = Q.getOwner(2);
         Q.getOwner(2).lord = Q.assets["lords.json"][data.lords[1]];
+        p2.buildings[0].addOfficer(p2.lord);
         Q.clearStage(3);
         Q.stageScene("showVSstats",3);
+        Q.stageScene("hud",4);
     });
     //At the start of each turn
     socket.on("startTurn",function(data){
+        Q.state.set("turn",data.player);
         if(Q.checkOwned(data.player)){
             Q.startTurn();
         } else {
             Q.standByTurn();
         }
+    });
+    
+    socket.on("placeBuilding",function(data){
+        if(!Q.checkOwned(data.owner)){
+            Q.placeClientBuilding(Q.stage(0).insert(new Q[data.class]({loc:data.loc,owner:Q.state.get("opponent")})));
+        };
     });
 }
 
