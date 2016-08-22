@@ -114,7 +114,7 @@ function setUp(){
     });
 }
 
-Q.debug=true;
+//Q.debug=true;
 setUp();
 });
 
