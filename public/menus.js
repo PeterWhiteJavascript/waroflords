@@ -227,39 +227,167 @@ Quintus.Menus = function(Q){
     });
     
     Q.scene("OfficerSelect",function(stage){
+        Q.stage(1).cont.hide();
         var bld = stage.options.building;
-        
-        var cont = stage.insert(new Q.ActionBox({fill:"blue"}));
-        var maxShowing = Math.floor(cont.p.h/64);
+        var cont = stage.insert(new Q.ActionBox({x:Q.width/2,y:Q.height/2+35,fill:"blue"}));
+        var maxShowing = Math.floor(cont.p.h/64)-1;
         if(maxShowing>bld.p.officers.length){
             maxShowing = bld.p.officers.length;
         }
-        
-        var rowsCont = stage.insert(new Q.ActionBox({x:10,y:80}));
+        var officerConts = [];
+        var rowsCont = cont.insert(new Q.ActionBox({x:10,y:10}));
         rowsCont.p.w-=20;
         rowsCont.p.h-=20;
-        //When a heading is clicked, sort the officers
-        //TODO
-        rowsCont.sortBy = function(by){
-            console.log(by)
-        };
+        
         var headings = ["NAME","TR MAX","CHR","INT","LDR","POL","KNO"];
-        var heading = rowsCont.insert(new Q.RowInfo());
+        var heading = rowsCont.insert(new Q.RowInfo({x:-rowsCont.p.w/2,y:-rowsCont.p.h/2,type:Q.SPRITE_NONE}));
         heading.p.y+=heading.p.h/2+10;
         var xPos = heading.setUpHeading(headings);
-        for(var i=0;i<maxShowing;i++){
-            var off = bld.p.officers[i];
-            var obj = {name:off.name,image:off.image,stats:off.stats,troops:off.troops,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
-            var info = rowsCont.insert(new Q.RowInfo({y:(i+1)*heading.p.h+20,obj:obj}));
-            info.p.y+=info.p.h/2;
-            var st = off.stats;
-            info.setUp([off.name,off.maxTroops,st.chr,st.int,st.ldr,st.pol,st.kno],xPos);
+        
+        function showOfficerConts(){
+            for(var i=0;i<maxShowing;i++){
+                var off = bld.p.officers[i];
+                var obj = {name:off.name,image:off.image,stats:off.stats,troops:off.troops,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
+                var info = rowsCont.insert(new Q.RowInfo({x:-rowsCont.p.w/2,y:(i+1)*heading.p.h+20-rowsCont.p.h/2,obj:obj}));
+                //Select officer
+                info.on("touch",info,function(){
+                    this.stage.options.cont.changeObj(this.p.obj);
+                    Q.clearStage(2);
+                    Q.stage(1).cont.show();
+                });
+                info.p.y+=info.p.h/2;
+                var st = off.stats;
+                info.setUp([off.name,off.maxTroops,st.chr,st.int,st.ldr,st.pol,st.kno],xPos);
+                //Push this for removal when sorting
+                officerConts.push(info);
+            }
         }
         
+        //When a heading is clicked, sort the officers
+        rowsCont.sortBy = function(by,order){
+            var sorts = ["name","maxTroops","stats.chr","stats.int","stats.ldr","stats.pol","stats.kno"];
+            bld.p.officers = Q.sortObjs(bld.p.officers,sorts[by],0,bld.p.officers.length);
+            officerConts.forEach(function(cont){
+                cont.destroy();
+            });
+            if(!order){bld.p.officers=bld.p.officers.reverse();};
+            officerConts = [];
+            showOfficerConts();
+        };
+        //Show the initial officer assortment
+        showOfficerConts();
         
     });
     Q.scene("TroopsSelect",function(stage){
+        Q.stage(1).cont.hide();
+        var bld = stage.options.building;
+        var container = stage.options.cont.p.obj;
+        var contP = Q.stage(1).cont.p;
+        var selectedTroops = contP.troops;
+        var fullTroops = contP.fullTroops;
+        var maxTroops = contP.maxTroops;
+        var cont = stage.insert(new Q.ActionBox({x:Q.width/2,y:Q.height/2+35,fill:"blue"}));
+        var maxShowing = 9;
+        var rowH = 64;
+        /*if(maxShowing>bld.p.troops.length){
+            maxShowing = bld.p.troops.length;
+        }*/
+        var troopConts = [];
+        var rowsCont = cont.insert(new Q.ActionBox({x:10,y:10}));
+        rowsCont.p.w-=20;
+        rowsCont.p.h-=20;
         
+        var headings = ["ID","ATK","DEF","SPD","BLD","EFF","PRD"];
+        var heading = rowsCont.insert(new Q.RowInfo({x:-rowsCont.p.w/2,y:-rowsCont.p.h/2,type:Q.SPRITE_NONE}));
+        heading.p.y+=heading.p.h/2;
+        var xPos = heading.setUpHeading(headings);
+        
+        var troopsBox = rowsCont.insert(new Q.UI.Container({x:heading.p.x,y:heading.p.y+heading.p.h/2+10+rowH*4+rowH/2,w:heading.p.w,h:(fullTroops.length-maxShowing)*64}));
+        
+        function showTroopConts(){
+            for(var i=0;i<fullTroops.length;i++){
+                var trp = fullTroops[i];
+                var obj = {atk:trp.atk,def:trp.def,spd:trp.spd,bld:trp.bld,eff:trp.eff,prd:trp.prd,type:"Troops",id:trp.id,building:bld};
+                var fill = 'white';
+                if(trp.selected){
+                    fill = 'lightblue';
+                }
+                var info = troopsBox.insert(new Q.RowInfo({x:-troopsBox.p.w/2,y:-(rowH*4+rowH/2)+i*heading.p.h,obj:obj,fill:fill,trp:trp}));
+                //Select/deselect troop
+                info.on("touch",info,function(){
+                    var obj = this;
+                    if(!obj.p.trp.selected){
+                        if(selectedTroops.length>=maxTroops){
+                            //TODO: Play can't do that sound
+                            return;
+                        };
+                        Q.changeProp(obj.p.trp,"selected",true);
+                        obj.p.fill = 'lightblue';
+                        selectedTroops.push(obj.p.trp);
+                    } else {
+                        if(selectedTroops.length===0){return;};
+                        obj.p.fill = 'white';
+                        for(var i=0;i<selectedTroops.length;i++){
+                            if(selectedTroops[i].id===obj.p.trp.id){
+                                selectedTroops[i].selected=false;
+                                selectedTroops.splice(i,1);
+                                break;
+                            }
+                        }
+                    }
+                });
+                info.p.y+=info.p.h/2;
+                info.setUp([obj.id,obj.atk,obj.def,obj.spd,obj.bld,obj.eff,obj.prd],xPos);
+                //Push this for removal when sorting
+                troopConts.push(info);
+            }
+        }
+        //When a heading is clicked, sort the troops
+        rowsCont.sortBy = function(by,order){
+            var sorts = ["id","atk","def","spd","bld","eff","prd"];
+            fullTroops = Q.sortObjs(fullTroops,sorts[by],0,fullTroops.length);
+            troopConts.forEach(function(cont){
+                cont.destroy();
+            });
+            if(!order){fullTroops = fullTroops.reverse();};
+            troopConts = [];
+            contP.fullTroops = fullTroops;
+            showTroopConts();
+        };
+        //Show the initial officer assortment
+        showTroopConts();
+        
+        Q.portalComponent.prototype.defaults.portal = {
+            h: maxShowing*rowH,
+            w: troopsBox.p.w
+        };
+        troopsBox.p.maxShowing = maxShowing;
+        troopsBox.p.rowH = heading.p.h;
+        troopsBox.add("portal");
+        
+        var scrollingBar = rowsCont.insert(new Q.ScrollingBar({
+            x:rowsCont.p.w/2+5,
+            y:-10+rowH/2,w:rowH/2,
+            h:(maxShowing-1)*rowH,
+            rowH:rowH,
+            maxScrollH:troopsBox.p.h,
+            list:troopsBox.children,
+            portalCont:troopsBox,
+            maxShowing:maxShowing
+        }));
+        scrollingBar.p.x-=scrollingBar.p.w*2.5+10;
+        scrollingBar.setUp();
+        
+        var confirmControls = rowsCont.insert(new Q.MenuBox({x:rowsCont.p.w/2-20,y:-rowsCont.p.h/2,w:64,h:64,fill:"grey",type:Q.SPRITE_UI}));
+        confirmControls.p.x-=confirmControls.p.w/2;
+        confirmControls.p.y+=confirmControls.p.h/2;
+        //Confirm image only
+        confirmControls.insert(new Q.Sprite({sheet:"ui_more",type:Q.SPRITE_NONE,x:0,y:0}));
+        confirmControls.on("touch",function(){
+            Q.stage(1).cont.trigger("alterTroops",selectedTroops);
+            Q.clearStage(2);
+            Q.stage(1).cont.show();
+        });
     });
     Q.scene("ArmamentsSelect",function(stage){
         
@@ -273,22 +401,32 @@ Quintus.Menus = function(Q){
         var cols = 4;
         var offset = 10;
         //Insert the big container
-        var cont = stage.insert(new Q.ActionBox());
+        var cont = stage.cont = stage.insert(new Q.ActionBox({x:Q.width/2,y:Q.height/2+35}));
         //Get the first officer out of the building
         var bld = stage.options.building;
         var off = bld.p.officers[0];
-        var obj = {name:off.name,image:off.image,stats:off.stats,troops:bld.p.troops,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
+        var obj = {name:off.name,image:off.image,stats:off.stats,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
         //Officer
-        var officer = cont.insert(new Q.ColumnInfo({x:offset,y:offset,w:cont.p.w/cols-offset/cols,h:cont.p.h-offset*2,obj:obj}));
+        var officer = cont.insert(new Q.ColumnInfo({x:offset-cont.p.w/2,y:offset-cont.p.h/2,w:cont.p.w/cols-offset/cols,h:cont.p.h-offset*2,obj:obj}));
         officer.setUp();
+        //The only place that troop values should be taken from
+        cont.p.fullTroops = bld.p.troops;
+        cont.p.maxTroops = off.maxTroops;
+        var max = cont.p.maxTroops>cont.p.fullTroops.length?cont.p.fullTroops.length:cont.p.maxTroops;
+        cont.p.troops = Q.sortObjs(cont.p.fullTroops,false,0,max);
         //Troops
-        var trp = cont.insert(new Q.ColumnInfo({x:offset+officer.p.w,y:offset,w:cont.p.w/cols-offset/cols,h:cont.p.h-offset*2,obj:{name:"Troops",type:"Troops",image:"troops.png",troops:bld.p.troops,maxTroops:off.maxTroops,building:bld}}));
+        var trp = cont.insert(new Q.ColumnInfo({x:offset+officer.p.w-cont.p.w/2,y:offset-cont.p.h/2,w:cont.p.w/cols-offset/cols,h:cont.p.h-offset*2,obj:{name:"Troops",type:"Troops",image:"troops.png",building:bld}}));
+        
+        Q.changeProp(cont.p.troops,"selected",true);
         trp.setUp();
         trp.add("numBar");
         officer.on("changeObj",trp,"changeTroops");
+        cont.on("alterTroops",function(newTroops){
+            cont.p.troops = newTroops;
+            trp.trigger("reCalculateTroops",cont.p.troops);
+        });
         //Armaments
         //var arm = cont.insert(new Q.ColumnInfo({x:cont.p.w-10,y:10,h:cont.p.h-20}));
-        console.log(cont)
         
     });
     Q.scene("Promote",function(stage){

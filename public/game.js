@@ -261,6 +261,32 @@ Quintus.Game = function(Q){
         //Hide all buildings/troops
         Q.hideAll();
         
+        myTown.addOfficer({
+            "id":"officer_2",
+            "image":"donkey_kong.png",
+            "name":"Officer 2",
+            "stats":{
+                "atk":12,
+                "def":52,
+                "spd":53,
+                "bld":15,
+                "eff":2,
+                "prd":2,
+                "chr":13,
+                "int":1,
+                "ldr":1,
+                "pol":1,
+                "kno":1
+            },
+            "equip":{
+                "spear":4,
+                "sword":6,
+                "bow":1,
+                "weaponry":2,
+                "horse":3
+            },
+            "maxTroops":50}
+        );
     });
     
     

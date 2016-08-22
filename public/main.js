@@ -24,7 +24,6 @@ Q.state.set("inMenu",true);
 var socket = io.connect();
 //All information about this connection is here
 var connection = Q.connection = {};
-
 function player(id,elo,player,name){
     this.id = id;
     this.elo = elo;
@@ -35,7 +34,7 @@ function player(id,elo,player,name){
     this.troops = [];
     this.buildings = [];
     this.units = [];
-    this.arms = {spears:0,pikes:0,swords:0,clubs:0,bows:0,rams:0,catapults:0,horses:0};
+    this.equip = {spears:0,pikes:0,swords:0,clubs:0,bows:0,rams:0,catapults:0,horses:0};
 };
 
 function setUp(){
@@ -82,6 +81,19 @@ function setUp(){
         Q.getOwner(2).lord = Q.assets["lords.json"][data.lords[1]];
         p2.buildings[0].addOfficer(p2.lord);
         Q.clearStage(3);
+        
+        //Start temp
+        Q.stageScene("hud",4);
+        Q.gameTouchControls();
+        Q.calculateLOS();
+        Q.state.set("inMenu",false);
+        if(Q.checkOwned(data.player)){
+            Q.startTurn();
+        } else {
+            Q.standByTurn();
+        }
+        return;
+        //End temp
         Q.stageScene("showVSstats",3);
         Q.stageScene("hud",4);
     });
@@ -102,7 +114,7 @@ function setUp(){
     });
 }
 
-//Q.debug=true;
+Q.debug=true;
 setUp();
 });
 

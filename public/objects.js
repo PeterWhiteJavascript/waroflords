@@ -49,7 +49,7 @@ Quintus.Objects = function(Q){
         for(var i=0;i<num;i++){
             troops.push({
                 id:id+i,
-                atk:1,
+                atk:Math.floor(Math.random()*2)+1,
                 def:1,
                 spd:1,
                 bld:1,
@@ -59,9 +59,28 @@ Quintus.Objects = function(Q){
         }
         return troops;
     };
+    //Returns troops taht haven't been selected yet
+    Q.getNewTroops=function(troops,num){
+        var newTroops = [];
+        for(var i=0;i<troops.length;i++){
+            if(!troops[i].selected){
+                newTroops.push(troops[i]);
+                if(newTroops.length>=num){break;};
+            }
+        };
+        return newTroops;
+    };
+    Q.changeProp=function(obj,prop,to){
+        if(!to){
+            to = !obj[prop]?true:false;
+        }
+        obj[prop] = to;
+        return obj[prop];
+    };
     //Adds up all troops stats and returns the sum
     Q.addStats=function(troops){
         var sum = {atk:0,def:0,spd:0,bld:0,eff:0,prd:0};
+        if(troops.length===0) return sum;
         //Loop through each troop
         var keys = Object.keys(troops[0]);
         keys.shift();
@@ -73,13 +92,23 @@ Quintus.Objects = function(Q){
         return sum;
     };
     //Gets a certain number of troops that is sorted by a stat (id or atk,def,spd,bld,eff,prd)
-    Q.getTroops=function(troops,stat,to,from){
+    Q.sortObjs=function(objs,stat,from,to){
         if(!from){from=0;};
         //If we're getting by order of array (id)
-        if(!stat) {return troops.slice(from,to);};
-        return troops.sort(function(a,b){
-            return b[stat]-a[stat];
-        }).slice(from,to);
+        if(!stat) {return objs.slice(from,to);};
+        if(stat.indexOf('.')>-1){
+            //First
+            var stat1 = stat.slice(0,stat.indexOf('.'));
+            //Second
+            var stat2 = stat.slice(stat.indexOf('.')+1,stat.length);
+            return objs.sort(function(a,b){
+                return b[stat1][stat2]-a[stat1][stat2];
+            }).slice(from,to);
+        } else {
+            return objs.sort(function(a,b){
+                return b[stat]-a[stat];
+            }).slice(from,to);
+        }
     };
     
     //Allows for setting the xy coordinates from a tile location

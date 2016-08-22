@@ -1,5 +1,236 @@
 //Client side only
 Quintus.UIObjects = function(Q){
+    Q.UI.Container.extend("ScrollingBar",{
+        init:function(p){
+            this._super(p,{
+            });
+        },
+        setUp:function(){
+            var p = this.p;
+            var under = this.insert(new Q.UnderScrollBar({x:0,y:0,w:p.w,h:p.h}));
+            var scrollbarH = under.p.h/10;
+            if(scrollbarH<16){scrollbarH=16;};
+            var scrollbar = this.insert(new Q.ScrollBar({x:0,y:0,w:p.w,h:scrollbarH,box:this,bar:under}));
+            var upArrow = this.insert(new Q.CycleArrow({x:0,y:-p.h/2,w:p.w,h:p.w,pos:'up',box:this,bar:scrollbar}));
+            upArrow.p.y+=upArrow.p.h/2-upArrow.p.h;
+            var downArrow = this.insert(new Q.CycleArrow({x:0,y:p.h/2,w:p.w,h:p.w,pos:'down',box:this,bar:scrollbar}));
+            downArrow.p.y-=downArrow.p.h/2-downArrow.p.h;
+            
+            
+            var bottomScrollBarJumper = this.insert(new Q.ScrollBarJumper({x:0,bar:under,w:p.w,h:1,scrollbar:scrollbar,bottom:true}));
+            bottomScrollBarJumper.setH((under.p.h)-(scrollbar.p.y+scrollbar.p.h/2)+(under.p.y-under.p.h/2));
+            bottomScrollBarJumper.setY(scrollbar.p.y+scrollbar.p.h/2);
+            bottomScrollBarJumper.p.cy = 0;
+            
+            var topScrollBarJumper = this.insert(new Q.ScrollBarJumper({x:0,bar:under,w:p.w,h:1,scrollbar:scrollbar,bottom:false}));
+            topScrollBarJumper.setY(scrollbar.p.y-scrollbar.p.h/2);
+            topScrollBarJumper.setH(under.p.h);
+            topScrollBarJumper.p.cy = 0;
+            scrollbar.p.bottomScrollBarJumper = bottomScrollBarJumper;
+        }
+    });
+    
+    //This is the arrow at the top and bottom
+    Q.UI.Container.extend('CycleArrow',{
+        init:function(p){
+            this._super(p,{
+                type:Q.SPRITE_UI,
+                color:"green",
+                w:20,h:20
+            });
+            this.on("touch",this,"clicked");
+        },
+        draw: function(ctx) {
+            ctx.fillStyle = this.p.color;
+            //This part should be taken out and coordinates for the triangle should be passed to moveTo and lineTo
+            if(this.p.pos==="down"){
+                ctx.rotate(Math.PI);
+            }
+            ctx.beginPath();
+            ctx.moveTo(-this.p.w/2,this.p.h/2);
+            ctx.lineTo(0,-this.p.h/2);
+            ctx.lineTo(this.p.w/2,this.p.h/2);
+            ctx.fill();
+        },
+        clicked:function(e){
+            var bar = this.p.bar;
+            if(this.p.pos==='down'){
+                bar.move(Math.round(-bar.p.maxScroll/100*2));
+            } else {
+                bar.move(Math.round(bar.p.maxScroll/100*2));
+            }
+            bar.touchEnd();
+        }
+    });
+    //This is the 'bar' sprite that the scroll bar sits on
+    Q.UI.Container.extend('UnderScrollBar',{
+        init:function(p){
+            this._super(p,{
+                fill:'grey',
+                type:Q.SPRITE_NONE,
+                radius:0
+            });
+        }
+    });
+    
+    //This is the invinsible jumper that you can push to cycle the list one full page
+    //There is one above and one below the scroll bar
+    Q.UI.Container.extend('ScrollBarJumper',{
+        init:function(p){
+            this._super(p,{
+                //fill:'red',
+                type:Q.SPRITE_UI
+            });
+            this.on("touch",this,"clicked");
+        },
+        setH:function(h){
+            this.p.h = h;
+            this.p.points=[[-this.p.w/2,0],[this.p.w/2,0],[this.p.w/2,this.p.h],[-this.p.w/2,this.p.h]];
+        },
+        setY:function(y){
+            this.p.y=y;
+        },
+        clicked:function(e){
+            var bar = this.p.scrollbar;
+            if(this.p.bottom){
+                bar.move(Math.round(-bar.p.maxScroll/100*15));
+            } else {
+                bar.move(Math.round(bar.p.maxScroll/100*15));
+            }
+            bar.touchEnd();
+        }
+    });
+    
+    //This is the scroll bar that you can drag
+    Q.UI.Container.extend('ScrollBar',{
+        init:function(p){
+            this._super(p,{
+                fill:"black",
+                w:16,
+                type:Q.SPRITE_UI,
+                shadow:0
+            });
+            this.p.points=[[-this.p.w/2,-this.p.h/2],[this.p.w/2,-this.p.h/2],[this.p.w/2,this.p.h/2],[-this.p.w/2,this.p.h/2]];
+            this.on("drag");
+            this.on("touchEnd");
+            this.p.y=-this.p.box.p.h/2+this.p.h/2;
+            this.p.startY=-this.p.box.p.h/2+this.p.h/2;
+            this.p.origY=-this.p.box.p.h/2+this.p.h/2;
+            this.p.minScroll=-this.p.box.p.h/2+this.p.h/2;
+            this.p.maxScroll=this.p.box.p.h/2-this.p.h/2;
+        },
+        checkBounds:function(check){
+            var min = this.p.minScroll;
+            var max = this.p.maxScroll;
+            if(check>=min&&check<=max){
+                return check;
+            } else if(check<min){
+                return min;
+            } else if(check>max){
+                return max;
+            }
+        },
+        touchEnd:function(e){
+            this.p.startY=this.p.y;
+            this.p.bottomScrollBarJumper.setH((this.p.bar.p.h)-(this.p.y+this.p.h/2)+(this.p.bar.p.y-this.p.bar.p.h/2));
+            this.p.bottomScrollBarJumper.setY(this.p.y+this.p.h/2);
+        },
+        drag:function(e){
+            var dif = e.y+this.p.startY;
+            var orig = e.sy;
+            var percent = Math.round((this.p.y-this.p.origY)/((this.p.maxScroll-this.p.minScroll)/100));
+            var box = this.p.box;
+            this.p.y = this.checkBounds(dif-orig);
+            box.p.portalCont.trigger("scroll",percent);
+        },
+        move:function(amount){
+            this.p.y = this.checkBounds(this.p.y-amount);
+            this.p.startY=this.p.y;
+            var box = this.p.box;
+            var items = box.p.list;
+            var percent = Math.round((this.p.y-this.p.origY)/((this.p.maxScroll-this.p.minScroll)/100));
+            box.p.portalCont.trigger("scroll",percent);
+        }
+    });
+    
+    //End Scrollbar
+    //Andrew Beheeler's work on https://gist.github.com/anonymous/7cabe57ee98fc93b59b1a42a63727edf
+    Q.component('portal', {
+        defaults: {
+            portal: {
+                h: void 0,
+                w: void 0,
+                borderColor: "black",
+                borderWidth: 1
+            }
+        },
+        added: function () {
+            var container = this.entity;
+
+            container.p.type = Q.SPRITE_NONE;
+            container.stage.addGrid(container);
+
+            this.matrix = new Q.Matrix2D(container.matrix);
+
+            var p = this.p = this.defaults.portal;
+            Q._defaults(p, {
+                h: container.p.h,
+                w: container.p.w
+            });
+
+            p.cx = p.w / 2;
+            p.cy = p.h / 2;
+
+            container.on("predraw", this, "predraw");
+            container.on("postdraw", this, "postdraw");
+            container.on("scroll",this,"scroll");
+        },
+        //Pass in an item
+        scroll:function(to){
+            var mult = 64;
+            var container = this.entity;
+            container.p.y=23-(container.p.h/100)*to;
+        },
+        resize: function (p) {
+            Q._extend(this.p, p);
+
+            this.p.cx = p.w / 2;
+            this.p.cy = p.h / 2;
+
+            this._calcMinMax();
+        },
+        predraw: function (ctx) {
+            var p = this.p, container = this.entity;
+
+            ctx.save();
+
+            this.matrix.setContextTransform(ctx);
+
+            ctx.beginPath();
+            ctx.lineWidth = p.borderWidth;
+            ctx.strokeStyle = p.borderColor;
+            ctx.rect(-p.cx, -p.cy, p.w, p.h);
+            ctx.stroke();
+            ctx.fill();
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            ctx.clip();
+        },
+        postdraw: function (ctx) {
+            ctx.restore();
+        }
+      });
+
+      /**
+      * Clamps a number. Based on Zevan's idea: http://actionsnippet.com/?p=475
+      * params: val, min, max
+      * Author: Jakub Korzeniowski
+      * Agency: Softhis
+      * http://www.softhis.com
+      */
+      (function () { Math.clamp = function (a, b, c) { return Math.max(b, Math.min(c, a)); } })();
+    
     Q.UI.Container.extend("Shape",{
         init:function(p){
             this._super(p,{
@@ -96,11 +327,8 @@ Quintus.UIObjects = function(Q){
                 border:"black",
                 radius:1,
                 opacity:0.8,
-                cx:0,cy:0,
                 w:Q.width,
-                h:Q.height-70,
-                x:0,
-                y:70
+                h:Q.height-70
             });
         }
     });
@@ -116,11 +344,10 @@ Quintus.UIObjects = function(Q){
         },
         setTouch:function(){
             var t = this;
-            var curTroops = this.p.ent.p.obj.troops.length;
             var value;
             switch(this.p.value){
                 case "max":
-                    value = this.p.ent.p.obj.troops.length;
+                    value = "max";
                     break;
                 case "more":
                     value = 10;
@@ -135,7 +362,7 @@ Quintus.UIObjects = function(Q){
                     value = -10;
                     break;
                 case "min":
-                    value = 10;
+                    value = "min";
                     break;
             }
             this.on("touch",this.p.ent,function(){
@@ -175,8 +402,9 @@ Quintus.UIObjects = function(Q){
             for(i=0;i<this.children.length;i++){
                 this.stage.remove(this.children[i]);
             }
-            this.setUp(obj.name,obj.image,obj.stats);
-            this.trigger("changeObj",obj);
+            var cont = Q.stage(1).cont.p;
+            cont.maxTroops = obj.maxTroops;
+            this.setUp();
         },
         setUp:function(){
             var obj = this.p.obj;
@@ -188,7 +416,7 @@ Quintus.UIObjects = function(Q){
             var im = this.p.image = imCont.insert(new Q.Sprite({asset:obj.image,x:0,y:imCont.p.h/2,scale:0.75}));
             var t = this;
             im.on("touch",function(){
-                Q.stageScene(obj.type+"Select",3,{cont:t,obj:obj,building:obj.building});
+                Q.stageScene(obj.type+"Select",2,{cont:t,obj:obj,building:obj.building});
             });
             
             this["show"+this.p.obj.type]();
@@ -196,7 +424,7 @@ Quintus.UIObjects = function(Q){
         showOfficer:function(){
             var off = this.p.obj;
             var cont = this.insert(new Q.MenuBox({x:this.p.w/2,y:this.p.h/2,w:this.p.w-20,h:this.p.h/2-10,cy:0}));
-            
+            var maxTroops = this.insert(new Q.MenuText({x:this.p.image.p.x+this.p.image.p.w/2,y:this.p.image.p.y+this.p.image.p.h/2+36,label:""+off.maxTroops}));
             var pentagon = cont.insert(new Q.Shape({x:0,y:90,size:64,fill:"grey",sides:5}));
             var startAt = -1;
             var stats = off.equip;
@@ -223,38 +451,59 @@ Quintus.UIObjects = function(Q){
         },
         showTroops:function(){
             var t = this;
-            var obj = this.p.obj;
-            var troops = Q.getTroops(obj.troops,false,obj.maxTroops,10);
-            var troopNumber = this.insert(new Q.MenuText({x:this.p.image.p.x+this.p.image.p.w/2,y:this.p.image.p.y+this.p.image.p.h/2+36,label:""+troops.length,troops:troops}));
+            var contP = Q.stage(1).cont.p;
+            var troops = contP.troops;
+            troops.forEach(function(trp){Q.changeProp(trp,"selected",true);});
+            var troopNumber = this.insert(new Q.MenuText({x:this.p.image.p.x+this.p.image.p.w/2,y:this.p.image.p.y+this.p.image.p.h/2+36,label:""+troops.length}));
+            this.on("reCalculateTroops",troopNumber,function(troops){
+                var stats = Q.addStats(troops);
+                var keys = Object.keys(stats);
+                keys.forEach(function(key){
+                    t.trigger(key+"Set",stats[key]);
+                });
+                //Change the text label
+                troopNumber.p.label = troops.length+"";
+            });
             this.on("changeTroops",troopNumber,function(num){
-                var from = troopNumber.p.troops.length;
-                var to = from+num;
-                troopNumber.p.label = to+"";
-                var newTroops;
+                var from = contP.troops.length;
+                if(num==="max"){ num = contP.fullTroops.length>contP.maxTroops?contP.maxTroops:contP.fullTroops.length;}
+                else if(num==="min"){ num = -contP.troops.length;};
+                var to = contP.troops.length+num;
+                var affectedTroops,mod;
                 //Increasing troops
                 if(num>0){
+                    if(to>contP.fullTroops.length){
+                        to = contP.fullTroops.length;
+                    }
+                    if(to>contP.maxTroops){
+                        to = contP.maxTroops;
+                    }
+                    //Can't increase any further
+                    if(from===to){return;};
                     //The new troops added
-                    newTroops = Q.getTroops(troopNumber.p.troops,false,from,to);//troops.slice(from,to);
-                    console.log(newTroops)
-                    var stats = Q.addStats(newTroops);
-                    var keys = Object.keys(stats);
-                    console.log(keys)
-                    console.log(stats)
-                    keys.forEach(function(key){
-                        t.trigger(key+"Change",troops[key]+stats[key]);
-                    });
+                    affectedTroops = Q.getNewTroops(contP.fullTroops,num);
+                    affectedTroops.forEach(function(trp){Q.changeProp(trp,"selected",true);});
+                    contP.troops = contP.troops.concat(affectedTroops);
+                    mod = 1;
+                    
                 }
                 //Decreasing Troops
                 else {
+                    if(to<0){to=0;};
+                    if(from===to){return;};
                     //The troops that are to be removed
-                    var oldTroops = troops.slice(from-to,from);
-                    var stats = Q.addStats(oldTroops);
-                    var keys = Object.keys(stats);
-                    keys.forEach(function(key){
-                        t.trigger(key+"Change",troops[key]-stats[key]);
-                    });
+                    affectedTroops = contP.troops.splice(to,from);
+                    affectedTroops.forEach(function(trp){Q.changeProp(trp,"selected",false);});
+                    mod = -1;
                 }
-                troopNumber.p.troops = newTroops;
+                
+                var stats = Q.addStats(affectedTroops);
+                var keys = Object.keys(stats);
+                keys.forEach(function(key){
+                    t.trigger(key+"Change",stats[key]*mod);
+                });
+                //Change the text label
+                troopNumber.p.label = to+"";
             });
             var cont = this.insert(new Q.MenuBox({x:this.p.w/2,y:this.p.h/2,w:this.p.w-20,h:this.p.h/2-10,cy:0}));
             var hexagon = cont.insert(new Q.Shape({x:0,y:cont.p.h/2,size:80,fill:"grey",sides:6}));
@@ -264,9 +513,14 @@ Quintus.UIObjects = function(Q){
                 if(i===0){return;};
                 var stat = stats[keys[i-1]];
                 var statName = hexagon.insert(new Q.MenuText({label:keys[i-1],x:a[0]/1.75,y:a[1]/1.75-6,size:20}));
-                var statValue = hexagon.insert(new Q.MenuText({label:stat+"",x:a[0]*1.25,y:a[1]*1.25-6,size:20-(stat+"").length}));
-                t.on(stat+"Change",statValue,function(stat){console.log(stat)
-                    statValue.label = stat+"";
+                var statValue = hexagon.insert(new Q.MenuText({label:stat+"",x:a[0]*1.25,y:a[1]*1.25-6,size:20-(stat+"").length,value:stat}));
+                t.on(keys[i-1]+"Change",statValue,function(stat){
+                    statValue.p.value+=stat;
+                    statValue.p.label = statValue.p.value+"";
+                });
+                t.on(keys[i-1]+"Set",statValue,function(stat){
+                    statValue.p.value=stat;
+                    statValue.p.label = statValue.p.value+"";
                 });
             });
         },
@@ -287,28 +541,16 @@ Quintus.UIObjects = function(Q){
                 radius:1,
                 opacity:1,
                 x:10,
-                w:Q.width-40,
+                w:Q.width-120,//84
                 h:64,
                 type:Q.SPRITE_UI
             });
             this.p.x+=this.p.w/2;
         },
-        touch:function(touch){
-            this.stage.options.cont.changeObj(this.p.obj);
-            Q.clearStage(3);
-        },
         setUp:function(data,xPos){
-            this.on("touch",this,function(touch){
-                this.touch(touch);
-            });
             var t = this;
-            function size(text,to){
-                if(text.p.w>to){
-                    text.p.size=12;
-                }
-            };
             data.forEach(function(d,i){
-                t.insert(new Q.MenuText({label:""+d,x:xPos[i],y:-t.p.h/4}));
+                t.insert(new Q.MenuText({label:""+d,x:xPos[i],y:-t.p.h/4,size:20-Math.floor(((d+"").length)/2)}));
             });
             
         },
@@ -317,12 +559,14 @@ Quintus.UIObjects = function(Q){
             var sections = t.p.w/data.length;
             var xPos = [];
             data.forEach(function(d,i){
-                var text = t.insert(new Q.MenuText({label:d,x:i*(sections/t.p.w)*t.p.w-t.p.w/2,y:-t.p.h/4}));
-                text.p.x+=10+text.p.w/2;
-                text.on("touch",function(){
-                    t.container.sortBy(i);
+                var cont = t.insert(new Q.MenuBox({x:5+i*((sections-1)/t.p.w)*t.p.w-t.p.w/2,y:0,w:sections-15,h:40,fill:"red",type:Q.SPRITE_UI,order:false}));
+                cont.insert(new Q.MenuText({label:d,y:-cont.p.h/4-2}));
+                cont.p.x+=5+cont.p.w/2;
+                cont.on("touch",cont,function(touch){
+                    t.container.sortBy(i,cont.p.order);
+                    Q.changeProp(cont.p,"order");
                 });
-                xPos.push(text.p.x);
+                xPos.push(cont.p.x);
             });
             return xPos;
         }
