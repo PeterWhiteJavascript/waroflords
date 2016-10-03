@@ -8,6 +8,10 @@ Quintus.Game = function(Q){
         Q.viewport.on("step");
         
     };
+    Q.getStartingArmaments=function(player,arms){
+        var amount = player.equip[arms];
+        return amount;
+    };
     var playTurnStart=function(){
         var obj;
         var stage = Q.stage(4);
@@ -254,10 +258,11 @@ Quintus.Game = function(Q){
         stage.add("viewport");
         var minX=Q.tileH/2;
         var maxX=Q.state.get("mapWidth")*Q.tileH*stage.viewport.scale-Q.tileH/2;
-        var minY=0;
+        //-70 for hud
+        var minY=-70;
         var maxY=Q.state.get("mapHeight")*Q.tileH*stage.viewport.scale-Q.tileH*2;
         var viewport = Q.viewport = stage.insert(new Q.ViewDragger({x:myTown.p.x,y:myTown.p.y,w:Q.width,h:Q.height}));
-        stage.follow(viewport,{x:true,y:true}/*,{minX: minX, maxX: maxX, minY: minY,maxY:maxY}*/);
+        stage.follow(viewport,{x:true,y:true},{minX: minX, maxX: maxX, minY: minY,maxY:maxY});
         //Hide all buildings/troops
         Q.hideAll();
         

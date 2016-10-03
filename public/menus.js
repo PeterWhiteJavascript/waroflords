@@ -247,7 +247,7 @@ Quintus.Menus = function(Q){
         function showOfficerConts(){
             for(var i=0;i<maxShowing;i++){
                 var off = bld.p.officers[i];
-                var obj = {name:off.name,image:off.image,stats:off.stats,troops:off.troops,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
+                var obj = {name:off.name,asset:off.image,stats:off.stats,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
                 var info = rowsCont.insert(new Q.RowInfo({x:-rowsCont.p.w/2,y:(i+1)*heading.p.h+20-rowsCont.p.h/2,obj:obj}));
                 //Select officer
                 info.on("touch",info,function(){
@@ -390,6 +390,11 @@ Quintus.Menus = function(Q){
         });
     });
     Q.scene("ArmamentsSelect",function(stage){
+        Q.stage(1).cont.hide();
+        var bld = stage.options.building;
+        var container = stage.options.cont.p.obj;
+        var contP = Q.stage(1).cont.p;
+        console.log(container)
         
     });
     Q.scene("HorsesSelect",function(stage){
@@ -405,17 +410,18 @@ Quintus.Menus = function(Q){
         //Get the first officer out of the building
         var bld = stage.options.building;
         var off = bld.p.officers[0];
-        var obj = {name:off.name,image:off.image,stats:off.stats,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
+        var obj = {name:off.name,asset:off.image,stats:off.stats,maxTroops:off.maxTroops,equip:off.equip,type:"Officer",id:off.id,building:bld};
         //Officer
-        var officer = cont.insert(new Q.ColumnInfo({x:offset-cont.p.w/2,y:offset-cont.p.h/2,w:cont.p.w/cols-offset/cols,h:cont.p.h-offset*2,obj:obj}));
+        var officer = cont.p.officerCont = cont.insert(new Q.ColumnInfo({x:offset-cont.p.w/2,y:offset-cont.p.h/2,w:cont.p.w/cols-offset/cols-16,h:cont.p.h-offset*2,obj:obj}));
         officer.setUp();
         //The only place that troop values should be taken from
         cont.p.fullTroops = bld.p.troops;
         cont.p.maxTroops = off.maxTroops;
         var max = cont.p.maxTroops>cont.p.fullTroops.length?cont.p.fullTroops.length:cont.p.maxTroops;
         cont.p.troops = Q.sortObjs(cont.p.fullTroops,false,0,max);
+        cont.p.equip = bld.p.equip;
         //Troops
-        var trp = cont.insert(new Q.ColumnInfo({x:offset+officer.p.w-cont.p.w/2,y:offset-cont.p.h/2,w:cont.p.w/cols-offset/cols,h:cont.p.h-offset*2,obj:{name:"Troops",type:"Troops",image:"troops.png",building:bld}}));
+        var trp = cont.insert(new Q.ColumnInfo({x:offset+officer.p.w-cont.p.w/2,y:offset-cont.p.h/2,w:cont.p.w/cols-offset/cols-16,h:cont.p.h-offset*2,obj:{name:"Troops",type:"Troops",asset:"troops.png",building:bld}}));
         
         Q.changeProp(cont.p.troops,"selected",true);
         trp.setUp();
@@ -426,7 +432,9 @@ Quintus.Menus = function(Q){
             trp.trigger("reCalculateTroops",cont.p.troops);
         });
         //Armaments
-        //var arm = cont.insert(new Q.ColumnInfo({x:cont.p.w-10,y:10,h:cont.p.h-20}));
+        var arm = {name:"Armaments",sheet:"spear",scale:4,type:"Armaments",bld:bld};
+        var armaments = cont.insert(new Q.ColumnInfo({x:offset+officer.p.w+trp.p.w+64-cont.p.w/2,y:offset-cont.p.h/2,w:cont.p.w/cols-offset/cols-16,h:cont.p.h-offset*2,obj:arm}));
+        armaments.setUp();
         
     });
     Q.scene("Promote",function(stage){

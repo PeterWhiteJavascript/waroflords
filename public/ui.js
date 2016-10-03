@@ -402,8 +402,13 @@ Quintus.UIObjects = function(Q){
             for(i=0;i<this.children.length;i++){
                 this.stage.remove(this.children[i]);
             }
-            var cont = Q.stage(1).cont.p;
-            cont.maxTroops = obj.maxTroops;
+            var contP = Q.stage(1).cont.p;
+            contP.maxTroops = obj.maxTroops;
+         
+            if(contP.troops.length>contP.maxTroops){
+                contP.troops.splice(contP.maxTroops,contP.troops.length);
+                Q.stage(1).cont.trigger("alterTroops",contP.troops);
+            }
             this.setUp();
         },
         setUp:function(){
@@ -412,8 +417,13 @@ Quintus.UIObjects = function(Q){
             titleCont.p.y=titleCont.p.h/2+10;
             titleCont.insert(new Q.MenuText({label:obj.name,y:-titleCont.p.h/4}));
             
-            var imCont = this.insert(new Q.MenuBox({x:this.p.w/2,y:titleCont.p.y+titleCont.p.h/2,w:this.p.w-20,h:this.p.h/2-60,cy:0}));
-            var im = this.p.image = imCont.insert(new Q.Sprite({asset:obj.image,x:0,y:imCont.p.h/2,scale:0.75}));
+            var imCont = this.p.image = this.insert(new Q.MenuBox({x:this.p.w/2,y:titleCont.p.y+titleCont.p.h/2,w:this.p.w-20,h:this.p.h/2-60,cy:0}));
+            var im;
+            if(obj.asset){ 
+                im = imCont.insert(new Q.Sprite({x:0,y:imCont.p.h/2,asset:obj.asset,scale:0.75}));
+            } else {
+                im = imCont.insert(new Q.Sprite({x:0,y:imCont.p.h/2,sheet:obj.sheet,scale:obj.scale}));
+            }
             var t = this;
             im.on("touch",function(){
                 Q.stageScene(obj.type+"Select",2,{cont:t,obj:obj,building:obj.building});
@@ -424,7 +434,7 @@ Quintus.UIObjects = function(Q){
         showOfficer:function(){
             var off = this.p.obj;
             var cont = this.insert(new Q.MenuBox({x:this.p.w/2,y:this.p.h/2,w:this.p.w-20,h:this.p.h/2-10,cy:0}));
-            var maxTroops = this.insert(new Q.MenuText({x:this.p.image.p.x+this.p.image.p.w/2,y:this.p.image.p.y+this.p.image.p.h/2+36,label:""+off.maxTroops}));
+            var maxTroops = this.insert(new Q.MenuText({x:this.p.image.p.x,y:this.p.image.p.h+16,label:""+off.maxTroops}));
             var pentagon = cont.insert(new Q.Shape({x:0,y:90,size:64,fill:"grey",sides:5}));
             var startAt = -1;
             var stats = off.equip;
@@ -454,7 +464,7 @@ Quintus.UIObjects = function(Q){
             var contP = Q.stage(1).cont.p;
             var troops = contP.troops;
             troops.forEach(function(trp){Q.changeProp(trp,"selected",true);});
-            var troopNumber = this.insert(new Q.MenuText({x:this.p.image.p.x+this.p.image.p.w/2,y:this.p.image.p.y+this.p.image.p.h/2+36,label:""+troops.length}));
+            var troopNumber = this.insert(new Q.MenuText({x:this.p.image.p.x,y:this.p.image.p.h+16,label:""+troops.length}));
             this.on("reCalculateTroops",troopNumber,function(troops){
                 var stats = Q.addStats(troops);
                 var keys = Object.keys(stats);
@@ -464,11 +474,13 @@ Quintus.UIObjects = function(Q){
                 //Change the text label
                 troopNumber.p.label = troops.length+"";
             });
-            this.on("changeTroops",troopNumber,function(num){
+            this.on("changeTroops",troopNumber,function(num){console.log(num)
                 var from = contP.troops.length;
                 if(num==="max"){ num = contP.fullTroops.length>contP.maxTroops?contP.maxTroops:contP.fullTroops.length;}
                 else if(num==="min"){ num = -contP.troops.length;};
                 var to = contP.troops.length+num;
+                var armsCont = Q.stage(1).cont.p.armamentsCont;
+                var maxArms = contP.equip[armsCont.p.arms];
                 var affectedTroops,mod;
                 //Increasing troops
                 if(num>0){
@@ -477,6 +489,9 @@ Quintus.UIObjects = function(Q){
                     }
                     if(to>contP.maxTroops){
                         to = contP.maxTroops;
+                    }
+                    if(to>maxArms){
+                        to = maxArms;
                     }
                     //Can't increase any further
                     if(from===to){return;};
@@ -489,6 +504,7 @@ Quintus.UIObjects = function(Q){
                 }
                 //Decreasing Troops
                 else {
+                    console.log(to,from)
                     if(to<0){to=0;};
                     if(from===to){return;};
                     //The troops that are to be removed
@@ -504,6 +520,7 @@ Quintus.UIObjects = function(Q){
                 });
                 //Change the text label
                 troopNumber.p.label = to+"";
+                armsCont.p.label = to+"";
             });
             var cont = this.insert(new Q.MenuBox({x:this.p.w/2,y:this.p.h/2,w:this.p.w-20,h:this.p.h/2-10,cy:0}));
             var hexagon = cont.insert(new Q.Shape({x:0,y:cont.p.h/2,size:80,fill:"grey",sides:6}));
@@ -525,6 +542,16 @@ Quintus.UIObjects = function(Q){
             });
         },
         showArmaments:function(){
+            var t = this;
+            var obj = t.p.obj;
+            var cont = this.insert(new Q.MenuBox({x:this.p.w/2,y:this.p.h/2,w:this.p.w-20,h:this.p.h/2-10,cy:0}));
+            var contP = Q.stage(1).cont.p;
+            var spears = obj.bld.p.equip.spears;
+            //While setting up, the number of spears can only be less than or equal to the max troops
+            if(contP.troops.length<spears){spears = contP.troops.length;};
+            var curArms = Q.stage(1).cont.p.armamentsCont = this.insert(new Q.MenuText({x:this.p.image.p.x,y:this.p.image.p.h+16,label:""+spears,arms:"spears"}));
+            //TODO: Cont will contain abilities that are available based on the officer
+            
             
         },
         showHorses:function(){

@@ -189,11 +189,17 @@ Quintus.Objects = function(Q){
                 usedOfficers:[],
                 los:3,
                 isA:"Town",
-                hidden:true
+                hidden:true,
+                equip:{spears:0,pikes:0,swords:0,clubs:0,bows:0,rams:0,catapults:0,horses:0}
             });
             this.add("location");
             this.on("selected");
             this.addTroops(Q.generateTroops(this.p.startingTroops,this.p.troops.length));
+            var keys = Object.keys(this.p.equip);
+            var t = this;
+            keys.forEach(function(key){
+                t.changeArmaments(key,Q.getStartingArmaments(t.p.owner,key));
+            });
             //var troops = this.removeTroops([4,5,6,7,3]); //Remove troops sample
         },
         changeFood:function(amount){
@@ -248,6 +254,9 @@ Quintus.Objects = function(Q){
             }
             this.trigger("changeTroops");
             return removed;
+        },
+        changeArmaments:function(arms,amount){
+            this.p.equip[arms]+=amount;
         },
         selected:function(){
             if(!this.p.selected){

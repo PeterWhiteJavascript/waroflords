@@ -38,7 +38,8 @@ function player(socket,id,elo,range,name){
     this.troops = [];
     this.buildings = [];
     this.units = [];
-    this.equip = {spears:0,pikes:0,swords:0,clubs:0,bows:0,rams:0,catapults:0,horses:0};
+    //The initial armaments
+    this.equip = {spears:60,pikes:50,swords:40,clubs:100,bows:0,rams:20,catapults:10,horses:300};
 };
 //Holds all information about every game
 var games = [];
